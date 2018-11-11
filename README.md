@@ -1,1 +1,1 @@
-A compact trie
+This package implements a trie.
