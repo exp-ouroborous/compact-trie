@@ -48,8 +48,8 @@ func (tn *node) AddChild(r rune) (*node, error) {
 	if r == 0 {
 		return nil, fmt.Errorf("rune is required")
 	}
-	if _, ok := tn.children[r]; ok {
-		return nil, fmt.Errorf("child node for %c alread exists", r)
+	if node, ok := tn.children[r]; ok {
+		return node, nil
 	}
 
 	tn.children[r] = &node{

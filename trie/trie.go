@@ -2,6 +2,8 @@ package trie
 
 import (
 	"fmt"
+
+	"github.com/disiqueira/gotree"
 )
 
 type wordArray struct {
@@ -27,8 +29,7 @@ func NewTrie() *Trie {
 	}
 }
 
-// HasWord finds the terminating node for the word specified. If no node is found and error is
-// returned
+// HasWord finds the terminating node for the word specified. If no node is found and error is returned
 func (t *Trie) HasWord(word string) error {
 	if len(word) == 0 {
 		return fmt.Errorf("no string to find")
@@ -44,6 +45,7 @@ func (t *Trie) HasWord(word string) error {
 	return nil
 }
 
+// findAtNode gets the node beginning from specified node where the runes terminate
 func (t *Trie) findAtNode(n *node, runes []rune, pos int) (*node, error) {
 
 	if pos >= len(runes) {
@@ -84,6 +86,7 @@ func (t *Trie) Add(word string) error {
 	return t.addAtNode(t.Root, runes)
 }
 
+// addAtNode adds runes starting at node specified
 func (t *Trie) addAtNode(n *node, runes []rune) error {
 
 	if len(runes) == 0 {
@@ -122,6 +125,7 @@ func (t *Trie) Words() []string {
 	return words.words
 }
 
+// wordsAtNode returns all words that occur after the node specified
 func (t *Trie) wordsAtNode(n *node, tillThis string, words *wordArray) {
 	if n.IsTerm() {
 		words.add(tillThis)
@@ -130,4 +134,26 @@ func (t *Trie) wordsAtNode(n *node, tillThis string, words *wordArray) {
 	for r, cNode := range n.Children() {
 		t.wordsAtNode(cNode, tillThis+string(r), words)
 	}
+}
+
+// Tree gives a goTree for the trie
+func (t *Trie) Tree() gotree.Tree {
+	tree := gotree.New("HEAD")
+
+	t.treeAtNode(t.Root, tree)
+
+	return tree
+}
+
+// treeAtNode gives the tree beginning from the node specified
+func (t *Trie) treeAtNode(n *node, tree gotree.Tree) {
+	for r, cNode := range n.Children() {
+		leaf := tree.Add(string(r))
+		t.treeAtNode(cNode, leaf)
+	}
+}
+
+// String returns the tree as a string
+func (t *Trie) String() string {
+	return t.Tree().Print()
 }

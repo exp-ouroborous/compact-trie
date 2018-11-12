@@ -7,11 +7,18 @@ import (
 
 func main() {
 	t := trie.NewTrie()
-
-	t.Add("a")
-	t.Add("ab")
-	t.Add("abba")
-	t.Add("abbc")
+	arr := []string{"abba", "cat", "cab", "can", "abb"}
+	addWords(arr, t)
 
 	fmt.Println(t.Words())
+	fmt.Println(t.String())
+}
+
+func addWords(words []string, t *trie.Trie) {
+	for i := range words {
+		err := t.Add(words[i])
+		if err != nil {
+			fmt.Printf("could not add %s: %s\n", words[i], err)
+		}
+	}
 }
