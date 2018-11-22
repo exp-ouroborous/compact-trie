@@ -1,87 +1,274 @@
 package trie
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/require"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/google/go-cmp/cmp"
 )
 
-type TrieNodeTestSuite struct {
-	suite.Suite
-
-	nodeValue  rune
-	nodeIsRoot bool
-	nodeIsTerm bool
-
-	tn *node
-
-	compareTo *node
-}
-
-func (s *TrieNodeTestSuite) SetupTest() {
-
-	// Setup the node
-	s.nodeValue = 'a'
-	s.tn = &node{
-		value:    s.nodeValue,
-		children: make(Children),
+func TestNodeFun(t *testing.T) {
+	value := 'a'
+	parent := &node{}
+	children := Children{
+		'c': &node{},
 	}
-	tnParent := &node{
-		children: Children{
-			s.nodeValue: s.tn,
+	isTerm := false
+	isRoot := false
+	n := &node{
+		value:    value,
+		parent:   parent,
+		children: children,
+		isTerm:   isTerm,
+		isRoot:   isRoot,
+	}
+
+	var cases = []struct {
+		Name string
+		Fun  string
+		Out  interface{}
+	}{
+		{
+			Name: "Value works correctly",
+			Fun:  "Value",
+			Out:  value,
+		},
+		{
+			Name: "Parent works correctly",
+			Fun:  "Parent",
+			Out:  parent,
+		},
+		{
+			Name: "Children works correctly",
+			Fun:  "Children",
+			Out:  children,
+		},
+		{
+			Name: "IsTerm works correctly",
+			Fun:  "IsTerm",
+			Out:  isTerm,
+		},
+		{
+			Name: "IsRoot works correctly",
+			Fun:  "IsRoot",
+			Out:  isRoot,
+		},
+		{
+			Name: "MakeTerm works correctly",
+			Fun:  "MakeTerm",
+			Out:  true,
 		},
 	}
-	s.tn.parent = tnParent
-	tnChild1 := &node{
-		value: 'a',
+
+	for _, test := range cases {
+		var op interface{}
+
+		if test.Fun == "Value" {
+			op = n.Value()
+		} else if test.Fun == "Parent" {
+			op = n.Parent()
+		} else if test.Fun == "Children" {
+			op = n.Children()
+		} else if test.Fun == "IsTerm" {
+			op = n.IsTerm()
+		} else if test.Fun == "IsRoot" {
+			op = n.IsRoot()
+		} else if test.Fun == "MakeTerm" {
+			n.MakeTerm()
+			op = n.isTerm
+		}
+
+		if !cmp.Equal(test.Out, op) {
+			t.Fatalf("expected and actual do not match: %s", cmp.Diff(test.Out, op))
+		}
 	}
-	tnChild2 := &node{
-		value: 'b',
+}
+
+func TestNodeAddChild(t *testing.T) {
+	var cases = []struct {
+		Name         string
+		ExistingRune bool
+		ExpectErr    string
+	}{
+		{
+			Name: "child is added successfully",
+		},
+		{
+			Name:         "empty rune throws an error",
+			ExistingRune: true,
+		},
 	}
-	tnChildren := make(Children)
-	tnChildren[tnChild1.value] = tnChild1
-	tnChildren[tnChild2.value] = tnChild2
-	s.tn.children = tnChildren
+	for _, test := range cases {
+		n := &node{
+			value:    'a',
+			children: make(Children),
+			isTerm:   true,
+		}
+		cRune := 'b'
+		ipRune := cRune
+
+		if test.ExistingRune {
+			n = &node{
+				value:    'a',
+				children: make(Children),
+				isTerm:   false,
+			}
+			n.children[cRune] = &node{
+				value:  cRune,
+				parent: n,
+				isTerm: true,
+			}
+		}
+
+		_, err := n.AddChild(ipRune)
+
+		if test.ExpectErr != "" {
+			require.NotEmpty(t, err)
+			assert.Contains(t, err.Error(), test.ExpectErr)
+			return
+		}
+		assert.Empty(t, err)
+
+		if _, ok := n.children[cRune]; !ok {
+			t.Fatalf("child for %c does not exist", cRune)
+		}
+		if n.children[cRune].value != cRune {
+			t.Fatalf("child for %c does not have correct value", cRune)
+		}
+		if n.isTerm != false {
+			t.Fatalf("isTerm is not false")
+		}
+	}
 }
 
-func (s *TrieNodeTestSuite) TestValue() {
-	s.Equal(s.nodeValue, s.tn.Value())
-}
+func TestNodeEqual(t *testing.T) {
+	var cases = []struct {
+		Name       string
+		NilNode    string //both,one
+		InNodeDiff string //value,root,term
+		ParentDiff string //nil,value
+		ChildDiff  string //empty,value,extra
+		IsEqual    bool
+		ExpectErr  string
+	}{
+		{
+			Name:    "equal nodes are equal",
+			IsEqual: true,
+		},
+		{
+			Name:    "nil nodes are equal",
+			NilNode: "both",
+			IsEqual: true,
+		},
+		{
+			Name:    "nil and non-nil nodes are not equal",
+			NilNode: "one",
+			IsEqual: false,
+		},
+		{
+			Name:    "nil and non-nil nodes are not equal",
+			NilNode: "one",
+			IsEqual: false,
+		},
+		{
+			Name:       "nodes with different values are not equal",
+			InNodeDiff: "value",
+			IsEqual:    false,
+		},
+		{
+			Name:       "nodes with different root flags are not equal",
+			InNodeDiff: "root",
+			IsEqual:    false,
+		},
+		{
+			Name:       "nodes with different term flags are not equal",
+			InNodeDiff: "term",
+			IsEqual:    false,
+		},
+		{
+			Name:       "one node with nil parent is not equal",
+			ParentDiff: "nil",
+			IsEqual:    false,
+		},
+		{
+			Name:       "node with different parent is not equal",
+			ParentDiff: "value",
+			IsEqual:    false,
+		},
+		{
+			Name:      "node with no child is not equal",
+			ChildDiff: "empty",
+			IsEqual:   false,
+		},
+		{
+			Name:      "node with different child is not equal",
+			ChildDiff: "value",
+			IsEqual:   false,
+		},
+		{
+			Name:      "node with extra child is not equal",
+			ChildDiff: "extra",
+			IsEqual:   false,
+		},
+	}
 
-func (s *TrieNodeTestSuite) TestParent() {
-	s.Equal(s.tn.parent, s.tn.Parent())
-}
+	for _, test := range cases {
+		var err error
 
-func (s *TrieNodeTestSuite) TestChildren() {
-	s.Equal(s.tn.children, s.tn.Children())
-}
+		nRune := 'n'
+		pRune := 'p'
+		cRune := 'c'
+		tn1 := &node{
+			value:    nRune,
+			parent:   &node{value: pRune},
+			children: Children{cRune: &node{value: cRune}},
+		}
+		tn2 := &node{
+			value:    nRune,
+			parent:   &node{value: pRune},
+			children: Children{cRune: &node{value: cRune}},
+		}
 
-func (s *TrieNodeTestSuite) TestIsRoot() {
-	s.Equal(s.tn.isRoot, s.tn.IsRoot())
-}
+		if test.NilNode == "both" {
+			tn1 = nil
+			tn2 = nil
+		} else if test.NilNode == "one" {
+			tn2 = nil
+		}
 
-func (s *TrieNodeTestSuite) TestIsTerm() {
-	s.Equal(s.tn.isTerm, s.tn.IsTerm())
-}
+		if test.InNodeDiff == "value" {
+			tn2.value = 'x'
+		} else if test.InNodeDiff == "root" {
+			tn2.isRoot = true
+		} else if test.InNodeDiff == "term" {
+			tn2.isTerm = true
+		}
 
-func (s *TrieNodeTestSuite) TestAddChild() {
-	s.tn.AddChild('z')
-	s.Equal('z', s.tn.Children()['z'].value)
+		if test.ParentDiff == "nil" {
+			tn2.parent = nil
+		} else if test.ParentDiff == "value" {
+			tn2.parent.value = 'x'
+		}
 
-	_, err := s.tn.AddChild(0)
-	s.Equal("rune is required", err.Error())
+		if test.ChildDiff == "empty" {
+			tn2.children = make(Children)
+		} else if test.ChildDiff == "value" {
+			tn2.children['c'] = &node{value: 'd'}
+		} else if test.ChildDiff == "extra" {
+			tn2.children['d'] = &node{value: 'd'}
+		}
 
-	_, err = s.tn.AddChild('z')
-	s.Equal(fmt.Sprintf("child node for %c alread exists", 'z'), err.Error())
-}
-func (s *TrieNodeTestSuite) TestMakeTerm() {
-	s.nodeIsTerm = true
-	s.tn.MakeTerm()
+		if test.ExpectErr != "" {
+			require.NotEmpty(t, err)
+			assert.Contains(t, err.Error(), test.ExpectErr)
+			return
+		}
+		assert.Empty(t, err)
 
-	s.Equal(s.nodeIsTerm, s.tn.IsTerm())
-}
-
-func TestTrieNodeTestSuite(t *testing.T) {
-	suite.Run(t, new(TrieNodeTestSuite))
+		op := tn1.Equal(tn2)
+		assert.Equal(t, test.IsEqual, op)
+	}
 }

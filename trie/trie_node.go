@@ -1,9 +1,5 @@
 package trie
 
-import (
-	"fmt"
-)
-
 // Children defines a map from a rune to trie node and represents children of a trie node
 type Children map[rune]*node
 
@@ -45,9 +41,6 @@ func (tn *node) IsRoot() bool {
 // AddChild adds a node for a rune and returns that node. If the rune is empty or if the
 // child node already exists an error is returned
 func (tn *node) AddChild(r rune) (*node, error) {
-	if r == 0 {
-		return nil, fmt.Errorf("rune is required")
-	}
 	if node, ok := tn.children[r]; ok {
 		return node, nil
 	}
@@ -56,80 +49,60 @@ func (tn *node) AddChild(r rune) (*node, error) {
 		value:    r,
 		parent:   tn,
 		children: make(Children),
+		isTerm:   true,
+		isRoot:   false,
 	}
+	tn.isTerm = false
 
 	return tn.children[r], nil
 }
 
-// MakeTerm amrks the trie node as terminating
+// MakeTerm rks the trie node as terminating
 func (tn *node) MakeTerm() {
 	tn.isTerm = true
 }
 
-// ###UNTESTED CODE###
-
-func isSame(a, b *node) error {
-	// Compare values in the current node
-	if err := hasSameValue(a, b); err != nil {
-		return fmt.Errorf("values are not same: %s", err)
+func (tn *node) Equal(tn2 *node) bool {
+	// Two nils are equal
+	if tn == nil || tn2 == nil {
+		if tn == nil && tn2 == nil {
+			return true
+		}
+		return false
 	}
 
-	// Compare values in the parent node
-	if err := hasSameValue(a.parent, b.parent); err != nil {
-		return fmt.Errorf("parent's values are not same: %s", err)
+	// Compare node specific values
+	if tn.value != tn2.value || tn.isRoot != tn2.isRoot || tn.isTerm != tn2.isTerm {
+		return false
 	}
 
-	// Are all of a's children in b and have the same value?
-	for r, cNode := range a.children {
-		bChildNode, ok := b.children[r]
+	// Compare parents
+	if tn.parent == nil || tn2.parent == nil {
+		if tn.parent == nil && tn2.parent == nil {
+			return true
+		}
+		return false
+	}
+	if tn.parent.value != tn2.parent.value {
+		return false
+	}
+
+	// Compare children
+	for cRune, cNode := range tn.children {
+		c2Node, ok := tn2.children[cRune]
 		if !ok {
-			return fmt.Errorf("node missing in second object: %c", r)
+			return false
 		}
-		if err := hasSameValue(cNode, bChildNode); err != nil {
-			return fmt.Errorf("nodes with same key %c do not match in values: %s", r, err)
+		if cNode.value != c2Node.value {
+			return false
+		}
+	}
+	for c2Rune := range tn2.children {
+		_, ok := tn.children[c2Rune]
+		if !ok {
+			return false
 		}
 	}
 
-	// Are all of b's children in a?
-	for r := range b.children {
-		if _, ok := a.children[r]; !ok {
-			return fmt.Errorf("extra node in second object: %c", r)
-		}
-		// No need to check the children as they have been checked in the previous loop
-	}
-
-	return nil
-}
-
-func hasSameValue(a, b *node) error {
-	if a.value != b.value {
-		return fmt.Errorf("values do not match: %c vs %c", a.value, b.value)
-	}
-
-	if a.isTerm != b.isTerm {
-		return fmt.Errorf("terminal values do not match: %t vs %t", a.isTerm, b.isTerm)
-	}
-
-	if a.isRoot != b.isRoot {
-		return fmt.Errorf("root values do not match: %t vs %t", a.isRoot, b.isRoot)
-	}
-
-	return nil
-}
-
-func deepCopy(src *node, parent *node) *node {
-	copy := &node{
-		value:    src.value,
-		parent:   parent,
-		children: make(Children),
-
-		isRoot: src.isRoot,
-		isTerm: src.isTerm,
-	}
-
-	for _, cNode := range src.children {
-		copy.children[cNode.value] = deepCopy(cNode, copy)
-	}
-
-	return copy
+	return true
 }
