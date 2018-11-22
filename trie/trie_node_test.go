@@ -91,14 +91,16 @@ func TestNodeAddChild(t *testing.T) {
 	var cases = []struct {
 		Name         string
 		ExistingRune bool
-		ExpectErr    string
+		Result       string
 	}{
 		{
-			Name: "child is added successfully",
+			Name:   "new rune is added successfully",
+			Result: nodeAdded,
 		},
 		{
-			Name:         "empty rune throws an error",
+			Name:         "existing rune is found successfully",
 			ExistingRune: true,
+			Result:       nodeFound,
 		},
 	}
 	for _, test := range cases {
@@ -123,15 +125,9 @@ func TestNodeAddChild(t *testing.T) {
 			}
 		}
 
-		_, err := n.AddChild(ipRune)
+		nResult := n.AddChild(ipRune)
 
-		if test.ExpectErr != "" {
-			require.NotEmpty(t, err)
-			assert.Contains(t, err.Error(), test.ExpectErr)
-			return
-		}
-		assert.Empty(t, err)
-
+		assert.Equal(t, test.Result, nResult.result)
 		if _, ok := n.children[cRune]; !ok {
 			t.Fatalf("child for %c does not exist", cRune)
 		}

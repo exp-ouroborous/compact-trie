@@ -3,6 +3,9 @@ package trie
 // Children defines a map from a rune to trie node and represents children of a trie node
 type Children map[rune]*node
 
+const nodeFound = "FOUND"
+const nodeAdded = "ADDED"
+
 // node represents a node in the trie
 type node struct {
 	value    rune
@@ -11,6 +14,11 @@ type node struct {
 
 	isTerm bool
 	isRoot bool
+}
+
+type nodeResult struct {
+	result string
+	*node
 }
 
 // Value gives the rune in the trie node
@@ -38,11 +46,17 @@ func (tn *node) IsRoot() bool {
 	return tn.isRoot
 }
 
-// AddChild adds a node for a rune and returns that node. If the rune is empty or if the
-// child node already exists an error is returned
-func (tn *node) AddChild(r rune) (*node, error) {
-	if node, ok := tn.children[r]; ok {
-		return node, nil
+// AddChild attempts to add a node and returns a nodeResult encapsulating results of the action
+func (tn *node) AddChild(r rune) *nodeResult {
+	if tn.children == nil {
+		tn.children = make(Children)
+	}
+
+	if foundN, ok := tn.children[r]; ok {
+		return &nodeResult{
+			result: nodeFound,
+			node:   foundN,
+		}
 	}
 
 	tn.children[r] = &node{
@@ -54,7 +68,10 @@ func (tn *node) AddChild(r rune) (*node, error) {
 	}
 	tn.isTerm = false
 
-	return tn.children[r], nil
+	return &nodeResult{
+		result: nodeAdded,
+		node:   tn.children[r],
+	}
 }
 
 // MakeTerm rks the trie node as terminating

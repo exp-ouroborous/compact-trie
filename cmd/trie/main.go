@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	t := trie.NewTrie()
+	t := trie.NewTrie("Trie")
 	arr := []string{"abba", "cat", "cab", "can", "abb"}
 	addWords(arr, t)
 

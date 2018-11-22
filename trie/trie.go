@@ -17,15 +17,17 @@ func (w *wordArray) add(word string) {
 // Trie defines a trie
 type Trie struct {
 	Root *node
+	Name string
 }
 
 // NewTrie creates a trie
-func NewTrie() *Trie {
+func NewTrie(name string) *Trie {
 	return &Trie{
 		Root: &node{
 			children: make(Children),
 			isRoot:   true,
 		},
+		Name: name,
 	}
 }
 
@@ -94,24 +96,23 @@ func (t *Trie) addAtNode(n *node, runes []rune) error {
 	}
 
 	r := runes[0]
-	cNode, err := n.AddChild(r)
-	if err != nil {
-		return fmt.Errorf("unable to add child: %s", err)
-	}
+	nResult := n.AddChild(r)
 
 	var cRunes []rune
 	if len(runes) > 1 {
 		cRunes = runes[1:]
 	} else {
 		// This was the last character so we should check if this is a terminator
-		if cNode.IsTerm() {
-			return fmt.Errorf("word already exists in trie")
+		if nResult.result == nodeFound {
+			if nResult.node.IsTerm() {
+				return fmt.Errorf("word already exists in trie")
+			}
+			nResult.node.MakeTerm()
 		}
-		cNode.MakeTerm()
 		return nil
 	}
 
-	return t.addAtNode(cNode, cRunes)
+	return t.addAtNode(nResult.node, cRunes)
 }
 
 // Words returns an array of words in the trie
@@ -138,7 +139,7 @@ func (t *Trie) wordsAtNode(n *node, tillThis string, words *wordArray) {
 
 // Tree gives a goTree for the trie
 func (t *Trie) Tree() gotree.Tree {
-	tree := gotree.New("HEAD")
+	tree := gotree.New(t.Name)
 
 	t.treeAtNode(t.Root, tree)
 

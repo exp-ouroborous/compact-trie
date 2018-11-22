@@ -8,6 +8,6 @@ type NodeAccessor interface {
 	IsTerm() bool
 	IsRoot() bool
 
-	AddChild(r rune) *node
+	AddChild(r rune) *nodeResult
 	MakeTerm()
 }
