@@ -1,7 +1,7 @@
 [![GoDoc](https://godoc.org/github.com/exp-ouroborous/compact-trie?status.svg)](https://godoc.org/github.com/exp-ouroborous/compact-trie)
 
 # Compact-Trie (beta)
-A data structure to compactly store words or more generally ordered rune slices. See [Trie]https://en.wikipedia.org/wiki/Trie for more info. 
+A data structure to compactly store words or more generally ordered rune slices. See [Trie](https://en.wikipedia.org/wiki/Trie) for more info. 
 
 ## Usage
 
