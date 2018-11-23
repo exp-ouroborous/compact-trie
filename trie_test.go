@@ -69,7 +69,7 @@ func TestHasWord(t *testing.T) {
 		} else if test.Input == "in-trie-but-not-term" {
 			ipWord = inTrieButNotTerm
 		}
-		err = tr.HasWord(ipWord)
+		err = tr.Find(ipWord)
 
 		if test.ExpectErr != "" {
 			require.NotEmpty(t, err)

@@ -35,9 +35,9 @@ func New(name string) *Trie {
 	}
 }
 
-// HasWord check if the trie has the word. A nil return means that the word was found. If the
+// Find check if the trie has the word. A nil return means that the word was found. If the
 // word is not found then an error is returned.
-func (t *Trie) HasWord(word string) error {
+func (t *Trie) Find(word string) error {
 	if len(word) == 0 {
 		return fmt.Errorf("no string to find")
 	}
