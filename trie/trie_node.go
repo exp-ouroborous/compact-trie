@@ -1,21 +1,25 @@
 package trie
 
-// Children defines a map from a rune to trie node and represents children of a trie node
-type Children map[rune]*node
+// childNodeMap defines a map from a rune to trie node and represents children of a trie node
+type childNodeMap map[rune]*node
 
 const nodeFound = "FOUND"
 const nodeAdded = "ADDED"
 
-// node represents a node in the trie
+// node represents a node in the trie. isTerm flags this node as terminating node i.e. there is
+// a word that ends at this node. This node can still have children. isRoot flags this node as
+// the root node.
 type node struct {
 	value    rune
 	parent   *node
-	children Children
+	children childNodeMap
 
 	isTerm bool
 	isRoot bool
 }
 
+// nodeResult represents the result of adding a node. It includes the node found/added as well as
+// a the result string which tells you whether the node was found or added
 type nodeResult struct {
 	result string
 	*node
@@ -31,12 +35,12 @@ func (tn *node) Parent() *node {
 	return tn.parent
 }
 
-// Children gives the children node of the trie node
-func (tn *node) Children() Children {
+// Children gives the child nodes of the trie node
+func (tn *node) Children() childNodeMap {
 	return tn.children
 }
 
-// IsTerm returns true if the trie node is a terminating
+// IsTerm returns true if the trie node is a terminating node
 func (tn *node) IsTerm() bool {
 	return tn.isTerm
 }
@@ -49,7 +53,7 @@ func (tn *node) IsRoot() bool {
 // AddChild attempts to add a node and returns a nodeResult encapsulating results of the action
 func (tn *node) AddChild(r rune) *nodeResult {
 	if tn.children == nil {
-		tn.children = make(Children)
+		tn.children = make(childNodeMap)
 	}
 
 	if foundN, ok := tn.children[r]; ok {
@@ -62,7 +66,7 @@ func (tn *node) AddChild(r rune) *nodeResult {
 	tn.children[r] = &node{
 		value:    r,
 		parent:   tn,
-		children: make(Children),
+		children: make(childNodeMap),
 		isTerm:   true,
 		isRoot:   false,
 	}
@@ -74,11 +78,15 @@ func (tn *node) AddChild(r rune) *nodeResult {
 	}
 }
 
-// MakeTerm rks the trie node as terminating
+// MakeTerm marks the trie node as terminating
 func (tn *node) MakeTerm() {
 	tn.isTerm = true
 }
 
+// Equal returns true if the receiver node and the compared to node satisfy all of the following
+// - same value and flags OR both are nil
+// - parents which are both nil OR have the same value
+// - have the same number of children indexed using same subscripts and have same values
 func (tn *node) Equal(tn2 *node) bool {
 	// Two nils are equal
 	if tn == nil || tn2 == nil {

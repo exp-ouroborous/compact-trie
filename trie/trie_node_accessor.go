@@ -4,7 +4,7 @@ package trie
 type NodeAccessor interface {
 	Value() rune
 	Parent() *node
-	Children() Children
+	Children() childNodeMap
 	IsTerm() bool
 	IsRoot() bool
 

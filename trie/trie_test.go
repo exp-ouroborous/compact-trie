@@ -12,11 +12,11 @@ import (
 
 func TestHasWord(t *testing.T) {
 
-	tr := NewTrie("test")
+	tr := NewTrie("")
 	tr.Root.children['a'] = &node{
 		value:    'a',
 		parent:   tr.Root,
-		children: make(Children),
+		children: make(childNodeMap),
 	}
 	tr.Root.children['a'].children['b'] = &node{
 		value:  'b',
@@ -116,7 +116,7 @@ func TestAddWord(t *testing.T) {
 		tr.Root.children['a'] = &node{
 			value:    'a',
 			parent:   tr.Root,
-			children: make(Children),
+			children: make(childNodeMap),
 		}
 		tr.Root.children['a'].children['b'] = &node{
 			value:  'b',
@@ -164,7 +164,7 @@ func TestHasWords(t *testing.T) {
 		tr.Root.children['a'] = &node{
 			value:    'a',
 			parent:   tr.Root,
-			children: make(Children),
+			children: make(childNodeMap),
 		}
 		tr.Root.children['a'].children['b'] = &node{
 			value:  'b',
@@ -199,7 +199,7 @@ func TestTree(t *testing.T) {
 		tr.Root.children['a'] = &node{
 			value:    'a',
 			parent:   tr.Root,
-			children: make(Children),
+			children: make(childNodeMap),
 		}
 		tr.Root.children['a'].children['b'] = &node{
 			value:  'b',

@@ -1,3 +1,4 @@
+// Package trie implements a trie for rune slices
 package trie
 
 import (
@@ -14,24 +15,28 @@ func (w *wordArray) add(word string) {
 	w.words = append(w.words, word)
 }
 
-// Trie defines a trie
+// Trie defines a trie with an optional name
 type Trie struct {
 	Root *node
 	Name string
 }
 
-// NewTrie creates a trie
+// NewTrie creates a trie with name specified. If no name is specified then "Trie" is used
 func NewTrie(name string) *Trie {
+	if name == "" {
+		name = "Trie"
+	}
 	return &Trie{
 		Root: &node{
-			children: make(Children),
+			children: make(childNodeMap),
 			isRoot:   true,
 		},
 		Name: name,
 	}
 }
 
-// HasWord finds the terminating node for the word specified. If no node is found and error is returned
+// HasWord check if the trie has the word. A nil return means that the word was found. If the
+// word is not found then an error is returned.
 func (t *Trie) HasWord(word string) error {
 	if len(word) == 0 {
 		return fmt.Errorf("no string to find")
@@ -77,7 +82,8 @@ func (t *Trie) findAtNode(n *node, runes []rune, pos int) (*node, error) {
 	return t.findAtNode(cNode, runes, pos)
 }
 
-// Add adds a word to the trie. If the word already exists in the trie and error is returned
+// Add adds a word to the trie. A nil return means that the word was added successfully. If the word already
+// exists in the trie an error is returned
 func (t *Trie) Add(word string) error {
 	if len(word) == 0 {
 		return fmt.Errorf("no string to add")
