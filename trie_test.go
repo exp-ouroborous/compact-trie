@@ -12,7 +12,7 @@ import (
 
 func TestHasWord(t *testing.T) {
 
-	tr := NewTrie("")
+	tr := New("")
 	tr.Root.children['a'] = &node{
 		value:    'a',
 		parent:   tr.Root,
@@ -112,7 +112,7 @@ func TestAddWord(t *testing.T) {
 
 	for _, test := range cases {
 		var err error
-		tr := NewTrie("test")
+		tr := New("test")
 		tr.Root.children['a'] = &node{
 			value:    'a',
 			parent:   tr.Root,
@@ -160,7 +160,7 @@ func TestHasWords(t *testing.T) {
 	}
 
 	for _, test := range cases {
-		tr := NewTrie("test")
+		tr := New("test")
 		tr.Root.children['a'] = &node{
 			value:    'a',
 			parent:   tr.Root,
@@ -195,7 +195,7 @@ func TestTree(t *testing.T) {
 
 	for _, test := range cases {
 		trieName := "test"
-		tr := NewTrie(trieName)
+		tr := New(trieName)
 		tr.Root.children['a'] = &node{
 			value:    'a',
 			parent:   tr.Root,

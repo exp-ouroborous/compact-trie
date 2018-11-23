@@ -21,8 +21,8 @@ type Trie struct {
 	Name string
 }
 
-// NewTrie creates a trie with name specified. If no name is specified then "Trie" is used
-func NewTrie(name string) *Trie {
+// New creates a trie with name specified. If no name is specified then "Trie" is used
+func New(name string) *Trie {
 	if name == "" {
 		name = "Trie"
 	}

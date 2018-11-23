@@ -8,7 +8,7 @@ A data structure to compactly store words or more generally ordered rune slices.
 Create a Trie with:
 
 ```Go
-t := trie.NewTrie("Trie_Name")
+t := trie.New("Trie_Name")
 ```
 
 Add words with:
@@ -21,13 +21,12 @@ Check if a word is in the trie:
 
 ```Go
 // A nil error means that the word was found
-err := t.HasWord("word")
+err := t.Find("word")
 ```
 
 Visualize the trie using a linux tree:
 
 ```Go
-// A nil error means that the word was found
 fmt.Println(t.String())
 ```
 
