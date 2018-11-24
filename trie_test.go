@@ -10,20 +10,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestHasWord(t *testing.T) {
-
+func TestFind(t *testing.T) {
 	tr := New("")
-	tr.Root.children['a'] = &node{
+	tr.Root.children['a'] = &Node{
 		value:    'a',
 		parent:   tr.Root,
-		children: make(childNodeMap),
+		children: make(ChildNodeMap),
 	}
-	tr.Root.children['a'].children['b'] = &node{
+	tr.Root.children['a'].children['b'] = &Node{
 		value:  'b',
 		parent: tr.Root.children['a'],
 		isTerm: true,
 	}
-	tr.Root.children['b'] = &node{
+	tr.Root.children['b'] = &Node{
 		value:  'b',
 		parent: tr.Root,
 		isTerm: true,
@@ -69,7 +68,7 @@ func TestHasWord(t *testing.T) {
 		} else if test.Input == "in-trie-but-not-term" {
 			ipWord = inTrieButNotTerm
 		}
-		err = tr.Find(ipWord)
+		_, err = tr.Find(ipWord)
 
 		if test.ExpectErr != "" {
 			require.NotEmpty(t, err)
@@ -81,7 +80,7 @@ func TestHasWord(t *testing.T) {
 	}
 }
 
-func TestAddWord(t *testing.T) {
+func TestAdd(t *testing.T) {
 	inTrie := "ab"
 	notInTrie := "abcd"
 	inTrieButNotTerm := "a"
@@ -113,17 +112,17 @@ func TestAddWord(t *testing.T) {
 	for _, test := range cases {
 		var err error
 		tr := New("test")
-		tr.Root.children['a'] = &node{
+		tr.Root.children['a'] = &Node{
 			value:    'a',
 			parent:   tr.Root,
-			children: make(childNodeMap),
+			children: make(ChildNodeMap),
 		}
-		tr.Root.children['a'].children['b'] = &node{
+		tr.Root.children['a'].children['b'] = &Node{
 			value:  'b',
 			parent: tr.Root.children['a'],
 			isTerm: true,
 		}
-		tr.Root.children['b'] = &node{
+		tr.Root.children['b'] = &Node{
 			value:  'b',
 			parent: tr.Root,
 			isTerm: true,
@@ -138,7 +137,7 @@ func TestAddWord(t *testing.T) {
 		} else if test.Input == "in-trie-but-not-term" {
 			ipWord = inTrieButNotTerm
 		}
-		err = tr.Add(ipWord)
+		_, err = tr.Add(ipWord, "")
 
 		if test.ExpectErr != "" {
 			require.NotEmpty(t, err)
@@ -150,7 +149,69 @@ func TestAddWord(t *testing.T) {
 	}
 }
 
-func TestHasWords(t *testing.T) {
+func TestRemove(t *testing.T) {
+	inTrie := "ab"
+	inTrieButNotTerm := "a"
+
+	var cases = []struct {
+		Name      string
+		Input     string
+		ExpectErr string
+	}{
+		{
+			Name: "Word in trie is removed successfully",
+		},
+		{
+			Name:      "empty word throws error",
+			Input:     "empty",
+			ExpectErr: "could not find word",
+		},
+		{
+			Name:      "word not in trie throws error",
+			Input:     "in-trie-but-not-term",
+			ExpectErr: "could not find word ",
+		},
+	}
+
+	for _, test := range cases {
+		var err error
+		tr := New("test")
+		tr.Root.children['a'] = &Node{
+			value:    'a',
+			parent:   tr.Root,
+			children: make(ChildNodeMap),
+		}
+		tr.Root.children['a'].children['b'] = &Node{
+			value:  'b',
+			parent: tr.Root.children['a'],
+			isTerm: true,
+		}
+		tr.Root.children['b'] = &Node{
+			value:  'b',
+			parent: tr.Root,
+			isTerm: true,
+		}
+
+		ipWord := inTrie
+
+		if test.Input == "empty" {
+			ipWord = ""
+		} else if test.Input == "in-trie-but-not-term" {
+			ipWord = inTrieButNotTerm
+		}
+		err = tr.Remove(ipWord)
+
+		if test.ExpectErr != "" {
+			require.NotEmpty(t, err, test.Name+": "+test.ExpectErr)
+			assert.Contains(t, err.Error(), test.ExpectErr, test.Name)
+			continue
+		}
+		assert.Empty(t, err, test.Name)
+
+	}
+}
+
+func TestWords(t *testing.T) {
 	var cases = []struct {
 		Name string
 	}{
@@ -161,17 +222,17 @@ func TestHasWords(t *testing.T) {
 
 	for _, test := range cases {
 		tr := New("test")
-		tr.Root.children['a'] = &node{
+		tr.Root.children['a'] = &Node{
 			value:    'a',
 			parent:   tr.Root,
-			children: make(childNodeMap),
+			children: make(ChildNodeMap),
 		}
-		tr.Root.children['a'].children['b'] = &node{
+		tr.Root.children['a'].children['b'] = &Node{
 			value:  'b',
 			parent: tr.Root.children['a'],
 			isTerm: true,
 		}
-		tr.Root.children['b'] = &node{
+		tr.Root.children['b'] = &Node{
 			value:  'b',
 			parent: tr.Root,
 			isTerm: true,
@@ -186,27 +247,32 @@ func TestHasWords(t *testing.T) {
 
 func TestTree(t *testing.T) {
 	var cases = []struct {
-		Name string
+		Name       string
+		StringTest bool
 	}{
 		{
 			Name: "tree is generated correctly",
+		},
+		{
+			Name:       "tree string is generated correctly",
+			StringTest: true,
 		},
 	}
 
 	for _, test := range cases {
 		trieName := "test"
 		tr := New(trieName)
-		tr.Root.children['a'] = &node{
+		tr.Root.children['a'] = &Node{
 			value:    'a',
 			parent:   tr.Root,
-			children: make(childNodeMap),
+			children: make(ChildNodeMap),
 		}
-		tr.Root.children['a'].children['b'] = &node{
+		tr.Root.children['a'].children['b'] = &Node{
 			value:  'b',
 			parent: tr.Root.children['a'],
 			isTerm: true,
 		}
-		tr.Root.children['b'] = &node{
+		tr.Root.children['b'] = &Node{
 			value:  'b',
 			parent: tr.Root,
 			isTerm: true,
@@ -217,7 +283,12 @@ func TestTree(t *testing.T) {
 		expTree.Add("b")
 		tree := tr.Tree()
 
-		// TODO: This seems to throw a comparison error once in a while
+		if test.StringTest {
+			expTree := "test\n├── a\n│   └── b\n└── b\n"
+			tree := tr.String()
+			assert.Equal(t, expTree, tree, test.Name)
+		}
+
 		assert.Equal(t, expTree, tree, test.Name)
 	}
 }

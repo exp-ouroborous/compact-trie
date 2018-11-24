@@ -12,18 +12,22 @@ import (
 
 func TestNodeFun(t *testing.T) {
 	value := 'a'
-	parent := &node{}
-	children := childNodeMap{
-		'c': &node{},
+	parent := &Node{}
+	children := ChildNodeMap{
+		'c': &Node{},
 	}
+	data := "some-data"
+	changeData := "some-other-data"
 	isTerm := false
 	isRoot := false
-	n := &node{
+	n := &Node{
 		value:    value,
 		parent:   parent,
 		children: children,
-		isTerm:   isTerm,
-		isRoot:   isRoot,
+		data:     data,
+
+		isTerm: isTerm,
+		isRoot: isRoot,
 	}
 
 	var cases = []struct {
@@ -45,6 +49,21 @@ func TestNodeFun(t *testing.T) {
 			Name: "Children works correctly",
 			Fun:  "Children",
 			Out:  children,
+		},
+		{
+			Name: "HasChildren works correctly",
+			Fun:  "HasChildren",
+			Out:  true,
+		},
+		{
+			Name: "Data works correctly",
+			Fun:  "Data",
+			Out:  data,
+		},
+		{
+			Name: "SetData works correctly",
+			Fun:  "SetData",
+			Out:  changeData,
 		},
 		{
 			Name: "IsTerm works correctly",
@@ -72,6 +91,13 @@ func TestNodeFun(t *testing.T) {
 			op = n.Parent()
 		} else if test.Fun == "Children" {
 			op = n.Children()
+		} else if test.Fun == "HasChildren" {
+			op = n.HasChildren()
+		} else if test.Fun == "Data" {
+			op = n.Data()
+		} else if test.Fun == "SetData" {
+			n.SetData(changeData)
+			op = n.data
 		} else if test.Fun == "IsTerm" {
 			op = n.IsTerm()
 		} else if test.Fun == "IsRoot" {
@@ -104,21 +130,21 @@ func TestNodeAddChild(t *testing.T) {
 		},
 	}
 	for _, test := range cases {
-		n := &node{
+		n := &Node{
 			value:    'a',
-			children: make(childNodeMap),
+			children: make(ChildNodeMap),
 			isTerm:   true,
 		}
 		cRune := 'b'
 		ipRune := cRune
 
 		if test.ExistingRune {
-			n = &node{
+			n = &Node{
 				value:    'a',
-				children: make(childNodeMap),
+				children: make(ChildNodeMap),
 				isTerm:   false,
 			}
-			n.children[cRune] = &node{
+			n.children[cRune] = &Node{
 				value:  cRune,
 				parent: n,
 				isTerm: true,
@@ -217,15 +243,15 @@ func TestNodeEqual(t *testing.T) {
 		nRune := 'n'
 		pRune := 'p'
 		cRune := 'c'
-		tn1 := &node{
+		tn1 := &Node{
 			value:    nRune,
-			parent:   &node{value: pRune},
-			children: childNodeMap{cRune: &node{value: cRune}},
+			parent:   &Node{value: pRune},
+			children: ChildNodeMap{cRune: &Node{value: cRune}},
 		}
-		tn2 := &node{
+		tn2 := &Node{
 			value:    nRune,
-			parent:   &node{value: pRune},
-			children: childNodeMap{cRune: &node{value: cRune}},
+			parent:   &Node{value: pRune},
+			children: ChildNodeMap{cRune: &Node{value: cRune}},
 		}
 
 		if test.NilNode == "both" {
@@ -250,11 +276,11 @@ func TestNodeEqual(t *testing.T) {
 		}
 
 		if test.ChildDiff == "empty" {
-			tn2.children = make(childNodeMap)
+			tn2.children = make(ChildNodeMap)
 		} else if test.ChildDiff == "value" {
-			tn2.children['c'] = &node{value: 'd'}
+			tn2.children['c'] = &Node{value: 'd'}
 		} else if test.ChildDiff == "extra" {
-			tn2.children['d'] = &node{value: 'd'}
+			tn2.children['d'] = &Node{value: 'd'}
 		}
 
 		if test.ExpectErr != "" {

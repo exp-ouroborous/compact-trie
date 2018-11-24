@@ -3,6 +3,7 @@ package trie
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/disiqueira/gotree"
 )
@@ -17,7 +18,7 @@ func (w *wordArray) add(word string) {
 
 // Trie defines a trie with an optional name
 type Trie struct {
-	Root *node
+	Root *Node
 	Name string
 }
 
@@ -27,38 +28,32 @@ func New(name string) *Trie {
 		name = "Trie"
 	}
 	return &Trie{
-		Root: &node{
-			children: make(childNodeMap),
+		Root: &Node{
+			children: make(ChildNodeMap),
 			isRoot:   true,
 		},
 		Name: name,
 	}
 }
 
-// Find check if the trie has the word. A nil return means that the word was found. If the
-// word is not found then an error is returned.
-func (t *Trie) Find(word string) error {
+// Find check if the trie has the word and return the terminating node of the word
+func (t *Trie) Find(word string) (*Node, error) {
 	if len(word) == 0 {
-		return fmt.Errorf("no string to find")
+		return nil, fmt.Errorf("no string to find")
 	}
 
 	runes := []rune(word)
 
-	_, err := t.findAtNode(t.Root, runes, 0)
+	termNode, err := t.findAtNode(t.Root, runes, 0)
 	if err != nil {
-		return fmt.Errorf("word %s not found: %s", word, err)
+		return nil, fmt.Errorf("word %s not found: %s", word, err)
 	}
 
-	return nil
+	return termNode, nil
 }
 
 // findAtNode gets the node beginning from specified node where the runes terminate
-func (t *Trie) findAtNode(n *node, runes []rune, pos int) (*node, error) {
-
-	if pos >= len(runes) {
-		return nil, nil
-	}
-
+func (t *Trie) findAtNode(n *Node, runes []rune, pos int) (*Node, error) {
 	r := runes[pos]
 	cNode, ok := n.Children()[r]
 	if !ok {
@@ -82,25 +77,38 @@ func (t *Trie) findAtNode(n *node, runes []rune, pos int) (*node, error) {
 	return t.findAtNode(cNode, runes, pos)
 }
 
-// Add adds a word to the trie. A nil return means that the word was added successfully. If the word already
+// Remove removes the word from the trie. An error is returned is the word is not in the trie
+func (t *Trie) Remove(word string) error {
+	termNode, err := t.Find(word)
+	if err != nil {
+		return fmt.Errorf("could not find word %s in trie: %s", word, err)
+	}
+
+	termNode.isTerm = false
+
+	curNode := termNode
+	for !curNode.isTerm && !curNode.isRoot && !curNode.HasChildren() {
+		delete(curNode.parent.children, curNode.value)
+		curNode = curNode.parent
+	}
+
+	return nil
+}
+
+// Add adds a word to the trie and returns the terminating node. If the word already
 // exists in the trie an error is returned
-func (t *Trie) Add(word string) error {
+func (t *Trie) Add(word string, data interface{}) (*Node, error) {
 	if len(word) == 0 {
-		return fmt.Errorf("no string to add")
+		return nil, fmt.Errorf("no string to add")
 	}
 
 	runes := []rune(word)
 
-	return t.addAtNode(t.Root, runes)
+	return t.addAtNode(t.Root, runes, data)
 }
 
-// addAtNode adds runes starting at node specified
-func (t *Trie) addAtNode(n *node, runes []rune) error {
-
-	if len(runes) == 0 {
-		return nil
-	}
-
+// addAtNode adds runes starting at node specified and returns the terminating node
+func (t *Trie) addAtNode(n *Node, runes []rune, data interface{}) (*Node, error) {
 	r := runes[0]
 	nResult := n.AddChild(r)
 
@@ -110,15 +118,17 @@ func (t *Trie) addAtNode(n *node, runes []rune) error {
 	} else {
 		// This was the last character so we should check if this is a terminator
 		if nResult.result == nodeFound {
-			if nResult.node.IsTerm() {
-				return fmt.Errorf("word already exists in trie")
+			if nResult.Node.IsTerm() {
+				return nil, fmt.Errorf("word already exists in trie")
 			}
-			nResult.node.MakeTerm()
+			nResult.Node.MakeTerm()
+			nResult.Node.SetData(data)
 		}
-		return nil
+		nResult.Node.SetData(data)
+		return nResult.Node, nil
 	}
 
-	return t.addAtNode(nResult.node, cRunes)
+	return t.addAtNode(nResult.Node, cRunes, data)
 }
 
 // Words returns an array of words in the trie
@@ -133,7 +143,7 @@ func (t *Trie) Words() []string {
 }
 
 // wordsAtNode returns all words that occur after the node specified
-func (t *Trie) wordsAtNode(n *node, tillThis string, words *wordArray) {
+func (t *Trie) wordsAtNode(n *Node, tillThis string, words *wordArray) {
 	if n.IsTerm() {
 		words.add(tillThis)
 	}
@@ -153,10 +163,19 @@ func (t *Trie) Tree() gotree.Tree {
 }
 
 // treeAtNode gives the tree beginning from the node specified
-func (t *Trie) treeAtNode(n *node, tree gotree.Tree) {
-	for r, cNode := range n.Children() {
+func (t *Trie) treeAtNode(n *Node, tree gotree.Tree) {
+	// Sort child runes so that the trie viz is consistent
+	runes := make(runeSlice, len(n.children))
+	i := 0
+	for r := range n.children {
+		runes[i] = r
+		i++
+	}
+	sort.Sort(runeSlice(runes))
+
+	for _, r := range runes {
 		leaf := tree.Add(string(r))
-		t.treeAtNode(cNode, leaf)
+		t.treeAtNode(n.children[r], leaf)
 	}
 }
 
@@ -164,3 +183,10 @@ func (t *Trie) treeAtNode(n *node, tree gotree.Tree) {
 func (t *Trie) String() string {
 	return t.Tree().Print()
 }
+
+// Sadly you have to implement a sort interface for a rune :-(
+type runeSlice []rune
+
+func (p runeSlice) Len() int           { return len(p) }
+func (p runeSlice) Less(i, j int) bool { return p[i] < p[j] }
+func (p runeSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
