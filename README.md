@@ -38,6 +38,9 @@ Visualize the trie using a linux tree:
 fmt.Println(t.String())
 ```
 
+## TODO
+
+- Add fuzzy word search
 
 ## License
 MIT
