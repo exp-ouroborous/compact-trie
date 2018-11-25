@@ -10,6 +10,70 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestNewFromFile(t *testing.T) {
+	expTr := New("test")
+	expTr.Root.children['a'] = &Node{
+		value:    'a',
+		parent:   expTr.Root,
+		children: make(ChildNodeMap),
+	}
+	expTr.Root.children['a'].children['b'] = &Node{
+		value:  'b',
+		parent: expTr.Root.children['a'],
+		isTerm: true,
+	}
+	expTr.Root.children['b'] = &Node{
+		value:  'b',
+		parent: expTr.Root,
+		isTerm: true,
+	}
+
+	file := "testdata/wordtest.txt"
+	unreadableFile := "testdata/this-file-is-not-here"
+
+	var cases = []struct {
+		Name      string
+		File      string //empty,unreadable
+		ExpectErr string
+	}{
+		{
+			Name: "trie is correctly loaded from file",
+		},
+		{
+			Name:      "empty file name throws an error",
+			File:      "empty",
+			ExpectErr: "file is required",
+		},
+		{
+			Name:      "unreadable file throws an error",
+			File:      "unreadable",
+			ExpectErr: "could not read file",
+		},
+	}
+
+	for _, test := range cases {
+		var err error
+		ipFile := file
+
+		if test.File == "empty" {
+			ipFile = ""
+		} else if test.File == "unreadable" {
+			ipFile = unreadableFile
+		}
+		tr, err := NewFromFile(ipFile, "test")
+
+		if test.ExpectErr != "" {
+			require.NotEmpty(t, err, test.Name)
+			assert.Contains(t, err.Error(), test.ExpectErr, test.Name)
+			continue
+		}
+		assert.Empty(t, err, test.Name)
+
+		// TODO Is it kosher to use another function in the unit test??
+		assert.Equal(t, true, tr.Equal(expTr), test.Name)
+	}
+}
+
 func TestFind(t *testing.T) {
 	tr := New("")
 	tr.Root.children['a'] = &Node{
@@ -111,22 +175,8 @@ func TestAdd(t *testing.T) {
 
 	for _, test := range cases {
 		var err error
-		tr := New("test")
-		tr.Root.children['a'] = &Node{
-			value:    'a',
-			parent:   tr.Root,
-			children: make(ChildNodeMap),
-		}
-		tr.Root.children['a'].children['b'] = &Node{
-			value:  'b',
-			parent: tr.Root.children['a'],
-			isTerm: true,
-		}
-		tr.Root.children['b'] = &Node{
-			value:  'b',
-			parent: tr.Root,
-			isTerm: true,
-		}
+		tr, err := NewFromFile("testdata/wordtest.txt", "test")
+		require.Empty(t, err, test.Name)
 
 		ipWord := notInTrie
 
@@ -248,10 +298,15 @@ func TestWords(t *testing.T) {
 func TestTree(t *testing.T) {
 	var cases = []struct {
 		Name       string
+		WithCount  bool
 		StringTest bool
 	}{
 		{
 			Name: "tree is generated correctly",
+		},
+		{
+			Name:      "tree with count is generated correctly",
+			WithCount: true,
 		},
 		{
 			Name:       "tree string is generated correctly",
@@ -263,25 +318,34 @@ func TestTree(t *testing.T) {
 		trieName := "test"
 		tr := New(trieName)
 		tr.Root.children['a'] = &Node{
-			value:    'a',
-			parent:   tr.Root,
-			children: make(ChildNodeMap),
+			value:      'a',
+			parent:     tr.Root,
+			children:   make(ChildNodeMap),
+			childCount: 1,
 		}
 		tr.Root.children['a'].children['b'] = &Node{
-			value:  'b',
-			parent: tr.Root.children['a'],
-			isTerm: true,
+			value:      'b',
+			parent:     tr.Root.children['a'],
+			childCount: 1,
+			isTerm:     true,
 		}
 		tr.Root.children['b'] = &Node{
-			value:  'b',
-			parent: tr.Root,
-			isTerm: true,
+			value:      'b',
+			parent:     tr.Root,
+			childCount: 1,
+			isTerm:     true,
 		}
 
 		expTree := gotree.New(trieName)
 		expTree.Add("a").Add("b")
 		expTree.Add("b")
-		tree := tr.Tree()
+		tree := tr.Tree(false)
+		if test.WithCount {
+			expTree = gotree.New(trieName)
+			expTree.Add("a(1)").Add("b(1)")
+			expTree.Add("b(1)")
+			tree = tr.Tree(true)
+		}
 
 		if test.StringTest {
 			expTree := "test\n├── a\n│   └── b\n└── b\n"

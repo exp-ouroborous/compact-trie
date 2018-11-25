@@ -2,11 +2,16 @@
 package trie
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"sort"
+	"strconv"
 
 	"github.com/disiqueira/gotree"
 )
+
+const trieName = "Trie"
 
 type wordArray struct {
 	words []string
@@ -25,7 +30,7 @@ type Trie struct {
 // New creates a trie with name specified. If no name is specified then "Trie" is used
 func New(name string) *Trie {
 	if name == "" {
-		name = "Trie"
+		name = trieName
 	}
 	return &Trie{
 		Root: &Node{
@@ -34,6 +39,30 @@ func New(name string) *Trie {
 		},
 		Name: name,
 	}
+}
+
+// NewFromFile creates a trie from a file
+func NewFromFile(file string, name string) (*Trie, error) {
+	if len(file) == 0 {
+		return nil, fmt.Errorf("file is required")
+	}
+	fh, err := os.Open(file)
+	if err != nil {
+		return nil, fmt.Errorf("could not read file %s: %s", file, err)
+	}
+	defer fh.Close()
+
+	fs := bufio.NewScanner(fh)
+	tr := New(name)
+
+	for fs.Scan() {
+		word := fs.Text()
+		if len(word) > 0 {
+			tr.Add(word, "")
+		}
+	}
+
+	return tr, nil
 }
 
 // Find check if the trie has the word and return the terminating node of the word
@@ -103,7 +132,6 @@ func (t *Trie) Add(word string, data interface{}) (*Node, error) {
 	}
 
 	runes := []rune(word)
-
 	return t.addAtNode(t.Root, runes, data)
 }
 
@@ -125,10 +153,18 @@ func (t *Trie) addAtNode(n *Node, runes []rune, data interface{}) (*Node, error)
 			nResult.Node.SetData(data)
 		}
 		nResult.Node.SetData(data)
+		nResult.Node.childCount++
+		n.childCount++
 		return nResult.Node, nil
 	}
 
-	return t.addAtNode(nResult.Node, cRunes, data)
+	cn, err := t.addAtNode(nResult.Node, cRunes, data)
+	if err != nil {
+		return nil, err
+	}
+
+	n.childCount++
+	return cn, nil
 }
 
 // Words returns an array of words in the trie
@@ -140,6 +176,11 @@ func (t *Trie) Words() []string {
 	t.wordsAtNode(t.Root, "", words)
 
 	return words.words
+}
+
+// Equal checks if the trie is the same as compareTo
+func (t *Trie) Equal(compareTo *Trie) bool {
+	return t.String() == compareTo.String()
 }
 
 // wordsAtNode returns all words that occur after the node specified
@@ -154,16 +195,16 @@ func (t *Trie) wordsAtNode(n *Node, tillThis string, words *wordArray) {
 }
 
 // Tree gives a goTree for the trie
-func (t *Trie) Tree() gotree.Tree {
+func (t *Trie) Tree(withCount bool) gotree.Tree {
 	tree := gotree.New(t.Name)
 
-	t.treeAtNode(t.Root, tree)
+	t.treeAtNode(t.Root, tree, withCount)
 
 	return tree
 }
 
 // treeAtNode gives the tree beginning from the node specified
-func (t *Trie) treeAtNode(n *Node, tree gotree.Tree) {
+func (t *Trie) treeAtNode(n *Node, tree gotree.Tree, withCount bool) {
 	// Sort child runes so that the trie viz is consistent
 	runes := make(runeSlice, len(n.children))
 	i := 0
@@ -174,14 +215,18 @@ func (t *Trie) treeAtNode(n *Node, tree gotree.Tree) {
 	sort.Sort(runeSlice(runes))
 
 	for _, r := range runes {
-		leaf := tree.Add(string(r))
-		t.treeAtNode(n.children[r], leaf)
+		label := string(r)
+		if withCount {
+			label += "(" + strconv.Itoa(n.children[r].childCount) + ")"
+		}
+		leaf := tree.Add(label)
+		t.treeAtNode(n.children[r], leaf, withCount)
 	}
 }
 
 // String returns the tree as a string
 func (t *Trie) String() string {
-	return t.Tree().Print()
+	return t.Tree(false).Print()
 }
 
 // Sadly you have to implement a sort interface for a rune :-(

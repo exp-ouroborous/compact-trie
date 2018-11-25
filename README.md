@@ -12,6 +12,12 @@ Create a Trie with:
 t := trie.New("Trie_Name")
 ```
 
+Create a Trie from file of newline delimited words:
+
+```Go
+t := trie.NewFromFile("file_name","Trie_Name")
+```
+
 Add words (and data) with:
 
 ```Go
@@ -28,7 +34,7 @@ n, err := t.Find("word")
 Remove a word from the trie:
 
 ```Go
-// A nil error means that the word was successfully remove
+// A nil error means that the word was successfully removed
 err := t.Remove("word")
 ```
 
@@ -39,7 +45,6 @@ fmt.Println(t.String())
 ```
 
 ## TODO
-
 - Add fuzzy word search
 
 ## License

@@ -1,3 +1,6 @@
+Nov 25 2018
+- Added a method to load a trie from a newline delimited list of words
+
 Nov 24 2018
 - Added Remove function and data in the node
 

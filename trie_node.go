@@ -15,8 +15,9 @@ type Node struct {
 	children ChildNodeMap
 	data     interface{}
 
-	isTerm bool
-	isRoot bool
+	isTerm     bool
+	isRoot     bool
+	childCount int
 }
 
 // NodeResult represents the result of adding a node. It includes the node found/added as well as
