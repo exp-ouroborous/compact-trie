@@ -15,7 +15,7 @@ func TestNewFromFile(t *testing.T) {
 	expTr.Root.children['a'] = &node{
 		value:    'a',
 		parent:   expTr.Root,
-		children: make(ChildNodeMap),
+		children: make(childNodeMap),
 	}
 	expTr.Root.children['a'].children['b'] = &node{
 		value:  'b',
@@ -79,7 +79,7 @@ func TestFind(t *testing.T) {
 	tr.Root.children['a'] = &node{
 		value:    'a',
 		parent:   tr.Root,
-		children: make(ChildNodeMap),
+		children: make(childNodeMap),
 	}
 	tr.Root.children['a'].children['b'] = &node{
 		value:  'b',
@@ -229,7 +229,7 @@ func TestRemove(t *testing.T) {
 		tr.Root.children['a'] = &node{
 			value:    'a',
 			parent:   tr.Root,
-			children: make(ChildNodeMap),
+			children: make(childNodeMap),
 		}
 		tr.Root.children['a'].children['b'] = &node{
 			value:  'b',
@@ -275,7 +275,7 @@ func TestWords(t *testing.T) {
 		tr.Root.children['a'] = &node{
 			value:    'a',
 			parent:   tr.Root,
-			children: make(ChildNodeMap),
+			children: make(childNodeMap),
 		}
 		tr.Root.children['a'].children['b'] = &node{
 			value:  'b',
@@ -320,7 +320,7 @@ func TestTree(t *testing.T) {
 		tr.Root.children['a'] = &node{
 			value:      'a',
 			parent:     tr.Root,
-			children:   make(ChildNodeMap),
+			children:   make(childNodeMap),
 			childCount: 1,
 		}
 		tr.Root.children['a'].children['b'] = &node{

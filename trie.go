@@ -35,7 +35,7 @@ func New(name string) *Trie {
 	}
 	return &Trie{
 		Root: &node{
-			children: make(ChildNodeMap),
+			children: make(childNodeMap),
 			isRoot:   true,
 		},
 		Name: name,
@@ -67,7 +67,7 @@ func NewFromFile(file string, name string) (*Trie, error) {
 }
 
 // Find check if the trie has the word and return the terminating node of the word
-func (t *Trie) Find(word string) (*node, error) {
+func (t *Trie) Find(word string) (Node, error) {
 	if len(word) == 0 {
 		return nil, fmt.Errorf("no string to find")
 	}
@@ -83,7 +83,7 @@ func (t *Trie) Find(word string) (*node, error) {
 }
 
 // findAtNode gets the node beginning from specified node where the runes terminate
-func (t *Trie) findAtNode(n *node, runes []rune, pos int) (*node, error) {
+func (t *Trie) findAtNode(n Node, runes []rune, pos int) (Node, error) {
 	r := runes[pos]
 	cNode, ok := n.Children()[r]
 	if !ok {
@@ -130,12 +130,12 @@ func (t *Trie) Remove(word string) error {
 		return fmt.Errorf("could not find word %s in trie: %s", word, err)
 	}
 
-	termNode.isTerm = false
+	termNode.SetTerm(false)
 
 	curNode := termNode
-	for !curNode.isTerm && !curNode.isRoot && !curNode.HasChildren() {
-		delete(curNode.parent.children, curNode.value)
-		curNode = curNode.parent
+	for !curNode.IsTerm() && !curNode.IsRoot() && len(curNode.Children()) > 0 {
+		curNode.Parent().RemoveChild(curNode.Value())
+		curNode = curNode.Parent()
 	}
 
 	return nil
@@ -166,10 +166,10 @@ func (t *Trie) addAtNode(n *node, runes []rune, data interface{}) (*node, error)
 			if nResult.node.IsTerm() {
 				return nil, fmt.Errorf("word already exists in trie")
 			}
-			nResult.node.MakeTerm()
-			nResult.node.SetData(data)
+			nResult.node.SetTerm(false)
+			nResult.node.setData(data)
 		}
-		nResult.node.SetData(data)
+		nResult.node.setData(data)
 		nResult.node.childCount++
 		n.childCount++
 		return nResult.node, nil

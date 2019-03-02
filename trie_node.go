@@ -1,32 +1,31 @@
 package trie
 
-// ChildNodeMap defines a map from a rune to trie node and represents children of a trie node
-type ChildNodeMap map[rune]*node
+// childNodeMap defines a map from a rune to trie node and represents children of a trie node
+type childNodeMap map[rune]*node
 
 const nodeFound = "FOUND"
 const nodeAdded = "ADDED"
 
-// Node defines an interface to the node
+// Node defines an interface for a node
 type Node interface {
 	Value() rune
-	Parent() *node
-	Children() ChildNodeMap
-	IsTerm() bool
+	Parent() Node
+	Children() childNodeMap
+	IsTerm() bool // a word ends here
 	IsRoot() bool
 
-	AddChild(r rune) *NodeResult
-	MakeTerm()
+	AddChild(r rune) *nodeResult
+	RemoveChild(r rune)
+	SetTerm(term bool)
 
 	Equal(tn *node) bool
 }
 
-// node represents a node in the trie. isTerm flags this node as terminating node i.e. there is
-// a word that ends at this node, it can still have children. isRoot flags this node as the root
-// node.
+// node represents a node in the trie
 type node struct {
 	value    rune
 	parent   *node
-	children ChildNodeMap
+	children childNodeMap
 	data     interface{}
 
 	isTerm     bool
@@ -34,9 +33,9 @@ type node struct {
 	childCount int
 }
 
-// NodeResult represents the result of adding a node. It includes the node found/added as well as
+// nodeResult represents the result of adding a node. It includes the node found/added as well as
 // a the result string which tells you whether the node was found or added
-type NodeResult struct {
+type nodeResult struct {
 	result string
 	*node
 }
@@ -47,12 +46,12 @@ func (tn *node) Value() rune {
 }
 
 // Parent gives the parent of the trie node
-func (tn *node) Parent() *node {
+func (tn *node) Parent() Node {
 	return tn.parent
 }
 
 // Children gives the child nodes of the trie node
-func (tn *node) Children() ChildNodeMap {
+func (tn *node) Children() childNodeMap {
 	return tn.children
 }
 
@@ -61,8 +60,8 @@ func (tn *node) Data() interface{} {
 	return tn.data
 }
 
-// SetData sets the data in the node
-func (tn *node) SetData(v interface{}) {
+// setData sets the data in the node
+func (tn *node) setData(v interface{}) {
 	tn.data = v
 }
 
@@ -82,13 +81,13 @@ func (tn *node) IsRoot() bool {
 }
 
 // AddChild attempts to add a node and returns a nodeResult encapsulating results of the action
-func (tn *node) AddChild(r rune) *NodeResult {
+func (tn *node) AddChild(r rune) *nodeResult {
 	if tn.children == nil {
-		tn.children = make(ChildNodeMap)
+		tn.children = make(childNodeMap)
 	}
 
 	if foundN, ok := tn.children[r]; ok {
-		return &NodeResult{
+		return &nodeResult{
 			result: nodeFound,
 			node:   foundN,
 		}
@@ -97,21 +96,25 @@ func (tn *node) AddChild(r rune) *NodeResult {
 	tn.children[r] = &node{
 		value:    r,
 		parent:   tn,
-		children: make(ChildNodeMap),
+		children: make(childNodeMap),
 		isTerm:   true,
 		isRoot:   false,
 	}
 	tn.isTerm = false
 
-	return &NodeResult{
+	return &nodeResult{
 		result: nodeAdded,
 		node:   tn.children[r],
 	}
 }
 
-// MakeTerm marks the trie node as terminating
-func (tn *node) MakeTerm() {
-	tn.isTerm = true
+func (tn *node) RemoveChild(r rune) {
+	delete(tn.children, r)
+}
+
+// SetTerm marks the trie node as terminating
+func (tn *node) SetTerm(term bool) {
+	tn.isTerm = term
 }
 
 // Equal returns true if the receiver node and the compared to node satisfy all of the following
