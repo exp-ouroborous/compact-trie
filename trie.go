@@ -12,6 +12,7 @@ import (
 )
 
 const trieName = "Trie"
+const emptyRune = '_'
 
 type wordArray struct {
 	words []string
@@ -23,7 +24,7 @@ func (w *wordArray) add(word string) {
 
 // Trie defines a trie with an optional name
 type Trie struct {
-	Root *Node
+	Root *node
 	Name string
 }
 
@@ -33,7 +34,7 @@ func New(name string) *Trie {
 		name = trieName
 	}
 	return &Trie{
-		Root: &Node{
+		Root: &node{
 			children: make(ChildNodeMap),
 			isRoot:   true,
 		},
@@ -66,7 +67,7 @@ func NewFromFile(file string, name string) (*Trie, error) {
 }
 
 // Find check if the trie has the word and return the terminating node of the word
-func (t *Trie) Find(word string) (*Node, error) {
+func (t *Trie) Find(word string) (*node, error) {
 	if len(word) == 0 {
 		return nil, fmt.Errorf("no string to find")
 	}
@@ -82,7 +83,7 @@ func (t *Trie) Find(word string) (*Node, error) {
 }
 
 // findAtNode gets the node beginning from specified node where the runes terminate
-func (t *Trie) findAtNode(n *Node, runes []rune, pos int) (*Node, error) {
+func (t *Trie) findAtNode(n *node, runes []rune, pos int) (*node, error) {
 	r := runes[pos]
 	cNode, ok := n.Children()[r]
 	if !ok {
@@ -106,6 +107,22 @@ func (t *Trie) findAtNode(n *Node, runes []rune, pos int) (*Node, error) {
 	return t.findAtNode(cNode, runes, pos)
 }
 
+func findChildrenForRune(n *node, r rune) []*node {
+	resultNodes := make([]*node, 0)
+	if r == '_' {
+		for _, cn := range n.Children() {
+			resultNodes = append(resultNodes, cn)
+		}
+	} else {
+		cn, ok := n.Children()[r]
+		if ok {
+			resultNodes = append(resultNodes, cn)
+		}
+	}
+
+	return resultNodes
+}
+
 // Remove removes the word from the trie. An error is returned is the word is not in the trie
 func (t *Trie) Remove(word string) error {
 	termNode, err := t.Find(word)
@@ -126,7 +143,7 @@ func (t *Trie) Remove(word string) error {
 
 // Add adds a word to the trie and returns the terminating node. If the word already
 // exists in the trie an error is returned
-func (t *Trie) Add(word string, data interface{}) (*Node, error) {
+func (t *Trie) Add(word string, data interface{}) (*node, error) {
 	if len(word) == 0 {
 		return nil, fmt.Errorf("no string to add")
 	}
@@ -136,7 +153,7 @@ func (t *Trie) Add(word string, data interface{}) (*Node, error) {
 }
 
 // addAtNode adds runes starting at node specified and returns the terminating node
-func (t *Trie) addAtNode(n *Node, runes []rune, data interface{}) (*Node, error) {
+func (t *Trie) addAtNode(n *node, runes []rune, data interface{}) (*node, error) {
 	r := runes[0]
 	nResult := n.AddChild(r)
 
@@ -146,19 +163,19 @@ func (t *Trie) addAtNode(n *Node, runes []rune, data interface{}) (*Node, error)
 	} else {
 		// This was the last character so we should check if this is a terminator
 		if nResult.result == nodeFound {
-			if nResult.Node.IsTerm() {
+			if nResult.node.IsTerm() {
 				return nil, fmt.Errorf("word already exists in trie")
 			}
-			nResult.Node.MakeTerm()
-			nResult.Node.SetData(data)
+			nResult.node.MakeTerm()
+			nResult.node.SetData(data)
 		}
-		nResult.Node.SetData(data)
-		nResult.Node.childCount++
+		nResult.node.SetData(data)
+		nResult.node.childCount++
 		n.childCount++
-		return nResult.Node, nil
+		return nResult.node, nil
 	}
 
-	cn, err := t.addAtNode(nResult.Node, cRunes, data)
+	cn, err := t.addAtNode(nResult.node, cRunes, data)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +201,7 @@ func (t *Trie) Equal(compareTo *Trie) bool {
 }
 
 // wordsAtNode returns all words that occur after the node specified
-func (t *Trie) wordsAtNode(n *Node, tillThis string, words *wordArray) {
+func (t *Trie) wordsAtNode(n *node, tillThis string, words *wordArray) {
 	if n.IsTerm() {
 		words.add(tillThis)
 	}
@@ -204,7 +221,7 @@ func (t *Trie) Tree(withCount bool) gotree.Tree {
 }
 
 // treeAtNode gives the tree beginning from the node specified
-func (t *Trie) treeAtNode(n *Node, tree gotree.Tree, withCount bool) {
+func (t *Trie) treeAtNode(n *node, tree gotree.Tree, withCount bool) {
 	// Sort child runes so that the trie viz is consistent
 	runes := make(runeSlice, len(n.children))
 	i := 0

@@ -12,17 +12,17 @@ import (
 
 func TestNewFromFile(t *testing.T) {
 	expTr := New("test")
-	expTr.Root.children['a'] = &Node{
+	expTr.Root.children['a'] = &node{
 		value:    'a',
 		parent:   expTr.Root,
 		children: make(ChildNodeMap),
 	}
-	expTr.Root.children['a'].children['b'] = &Node{
+	expTr.Root.children['a'].children['b'] = &node{
 		value:  'b',
 		parent: expTr.Root.children['a'],
 		isTerm: true,
 	}
-	expTr.Root.children['b'] = &Node{
+	expTr.Root.children['b'] = &node{
 		value:  'b',
 		parent: expTr.Root,
 		isTerm: true,
@@ -76,17 +76,17 @@ func TestNewFromFile(t *testing.T) {
 
 func TestFind(t *testing.T) {
 	tr := New("")
-	tr.Root.children['a'] = &Node{
+	tr.Root.children['a'] = &node{
 		value:    'a',
 		parent:   tr.Root,
 		children: make(ChildNodeMap),
 	}
-	tr.Root.children['a'].children['b'] = &Node{
+	tr.Root.children['a'].children['b'] = &node{
 		value:  'b',
 		parent: tr.Root.children['a'],
 		isTerm: true,
 	}
-	tr.Root.children['b'] = &Node{
+	tr.Root.children['b'] = &node{
 		value:  'b',
 		parent: tr.Root,
 		isTerm: true,
@@ -226,17 +226,17 @@ func TestRemove(t *testing.T) {
 	for _, test := range cases {
 		var err error
 		tr := New("test")
-		tr.Root.children['a'] = &Node{
+		tr.Root.children['a'] = &node{
 			value:    'a',
 			parent:   tr.Root,
 			children: make(ChildNodeMap),
 		}
-		tr.Root.children['a'].children['b'] = &Node{
+		tr.Root.children['a'].children['b'] = &node{
 			value:  'b',
 			parent: tr.Root.children['a'],
 			isTerm: true,
 		}
-		tr.Root.children['b'] = &Node{
+		tr.Root.children['b'] = &node{
 			value:  'b',
 			parent: tr.Root,
 			isTerm: true,
@@ -272,17 +272,17 @@ func TestWords(t *testing.T) {
 
 	for _, test := range cases {
 		tr := New("test")
-		tr.Root.children['a'] = &Node{
+		tr.Root.children['a'] = &node{
 			value:    'a',
 			parent:   tr.Root,
 			children: make(ChildNodeMap),
 		}
-		tr.Root.children['a'].children['b'] = &Node{
+		tr.Root.children['a'].children['b'] = &node{
 			value:  'b',
 			parent: tr.Root.children['a'],
 			isTerm: true,
 		}
-		tr.Root.children['b'] = &Node{
+		tr.Root.children['b'] = &node{
 			value:  'b',
 			parent: tr.Root,
 			isTerm: true,
@@ -317,19 +317,19 @@ func TestTree(t *testing.T) {
 	for _, test := range cases {
 		trieName := "test"
 		tr := New(trieName)
-		tr.Root.children['a'] = &Node{
+		tr.Root.children['a'] = &node{
 			value:      'a',
 			parent:     tr.Root,
 			children:   make(ChildNodeMap),
 			childCount: 1,
 		}
-		tr.Root.children['a'].children['b'] = &Node{
+		tr.Root.children['a'].children['b'] = &node{
 			value:      'b',
 			parent:     tr.Root.children['a'],
 			childCount: 1,
 			isTerm:     true,
 		}
-		tr.Root.children['b'] = &Node{
+		tr.Root.children['b'] = &node{
 			value:      'b',
 			parent:     tr.Root,
 			childCount: 1,
