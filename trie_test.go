@@ -12,17 +12,17 @@ import (
 
 func TestNewFromFile(t *testing.T) {
 	expTr := New("test")
-	expTr.Root.children['a'] = &node{
+	expTr.Root.Children()['a'] = &node{
 		value:    'a',
 		parent:   expTr.Root,
 		children: make(childNodeMap),
 	}
-	expTr.Root.children['a'].children['b'] = &node{
+	expTr.Root.Children()['a'].Children()['b'] = &node{
 		value:  'b',
-		parent: expTr.Root.children['a'],
+		parent: expTr.Root.Children()['a'],
 		isTerm: true,
 	}
-	expTr.Root.children['b'] = &node{
+	expTr.Root.Children()['b'] = &node{
 		value:  'b',
 		parent: expTr.Root,
 		isTerm: true,
@@ -76,17 +76,17 @@ func TestNewFromFile(t *testing.T) {
 
 func TestFind(t *testing.T) {
 	tr := New("")
-	tr.Root.children['a'] = &node{
+	tr.Root.Children()['a'] = &node{
 		value:    'a',
 		parent:   tr.Root,
 		children: make(childNodeMap),
 	}
-	tr.Root.children['a'].children['b'] = &node{
+	tr.Root.Children()['a'].Children()['b'] = &node{
 		value:  'b',
-		parent: tr.Root.children['a'],
+		parent: tr.Root.Children()['a'],
 		isTerm: true,
 	}
-	tr.Root.children['b'] = &node{
+	tr.Root.Children()['b'] = &node{
 		value:  'b',
 		parent: tr.Root,
 		isTerm: true,
@@ -200,7 +200,7 @@ func TestAdd(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
-	inTrie := "ab"
+	inTrie := "abc"
 	inTrieButNotTerm := "a"
 
 	var cases = []struct {
@@ -226,17 +226,23 @@ func TestRemove(t *testing.T) {
 	for _, test := range cases {
 		var err error
 		tr := New("test")
-		tr.Root.children['a'] = &node{
+		tr.Root.Children()['a'] = &node{
 			value:    'a',
 			parent:   tr.Root,
 			children: make(childNodeMap),
 		}
-		tr.Root.children['a'].children['b'] = &node{
-			value:  'b',
-			parent: tr.Root.children['a'],
+		tr.Root.Children()['a'].Children()['b'] = &node{
+			value:    'b',
+			parent:   tr.Root.Children()['a'],
+			isTerm:   true,
+			children: make(childNodeMap),
+		}
+		tr.Root.Children()['a'].Children()['b'].Children()['c'] = &node{
+			value:  'c',
+			parent: tr.Root.Children()['a'].Children()['b'],
 			isTerm: true,
 		}
-		tr.Root.children['b'] = &node{
+		tr.Root.Children()['b'] = &node{
 			value:  'b',
 			parent: tr.Root,
 			isTerm: true,
@@ -258,6 +264,8 @@ func TestRemove(t *testing.T) {
 		}
 		assert.Empty(t, err, test.Name)
 
+		_, err = tr.Find(ipWord)
+		require.NotEmpty(t, err, test.Name+": "+"did not expect to find removed word")
 	}
 }
 
@@ -272,17 +280,17 @@ func TestWords(t *testing.T) {
 
 	for _, test := range cases {
 		tr := New("test")
-		tr.Root.children['a'] = &node{
+		tr.Root.Children()['a'] = &node{
 			value:    'a',
 			parent:   tr.Root,
 			children: make(childNodeMap),
 		}
-		tr.Root.children['a'].children['b'] = &node{
+		tr.Root.Children()['a'].Children()['b'] = &node{
 			value:  'b',
-			parent: tr.Root.children['a'],
+			parent: tr.Root.Children()['a'],
 			isTerm: true,
 		}
-		tr.Root.children['b'] = &node{
+		tr.Root.Children()['b'] = &node{
 			value:  'b',
 			parent: tr.Root,
 			isTerm: true,
@@ -298,15 +306,10 @@ func TestWords(t *testing.T) {
 func TestTree(t *testing.T) {
 	var cases = []struct {
 		Name       string
-		WithCount  bool
 		StringTest bool
 	}{
 		{
 			Name: "tree is generated correctly",
-		},
-		{
-			Name:      "tree with count is generated correctly",
-			WithCount: true,
 		},
 		{
 			Name:       "tree string is generated correctly",
@@ -317,19 +320,19 @@ func TestTree(t *testing.T) {
 	for _, test := range cases {
 		trieName := "test"
 		tr := New(trieName)
-		tr.Root.children['a'] = &node{
+		tr.Root.Children()['a'] = &node{
 			value:      'a',
 			parent:     tr.Root,
 			children:   make(childNodeMap),
 			childCount: 1,
 		}
-		tr.Root.children['a'].children['b'] = &node{
+		tr.Root.Children()['a'].Children()['b'] = &node{
 			value:      'b',
-			parent:     tr.Root.children['a'],
+			parent:     tr.Root.Children()['a'],
 			childCount: 1,
 			isTerm:     true,
 		}
-		tr.Root.children['b'] = &node{
+		tr.Root.Children()['b'] = &node{
 			value:      'b',
 			parent:     tr.Root,
 			childCount: 1,
@@ -339,13 +342,7 @@ func TestTree(t *testing.T) {
 		expTree := gotree.New(trieName)
 		expTree.Add("a").Add("b")
 		expTree.Add("b")
-		tree := tr.Tree(false)
-		if test.WithCount {
-			expTree = gotree.New(trieName)
-			expTree.Add("a(1)").Add("b(1)")
-			expTree.Add("b(1)")
-			tree = tr.Tree(true)
-		}
+		tree := tr.Tree()
 
 		if test.StringTest {
 			expTree := "test\n├── a\n│   └── b\n└── b\n"

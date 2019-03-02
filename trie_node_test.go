@@ -3,11 +3,9 @@ package trie
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
-	"github.com/stretchr/testify/assert"
-
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNodeFun(t *testing.T) {
@@ -76,8 +74,8 @@ func TestNodeFun(t *testing.T) {
 			Out:  isRoot,
 		},
 		{
-			Name: "MakeTerm works correctly",
-			Fun:  "MakeTerm",
+			Name: "SetTerm works correctly",
+			Fun:  "SetTerm",
 			Out:  true,
 		},
 	}
@@ -96,27 +94,29 @@ func TestNodeFun(t *testing.T) {
 		} else if test.Fun == "Data" {
 			op = n.Data()
 		} else if test.Fun == "SetData" {
-			n.setData(changeData)
+			n.SetData(changeData)
 			op = n.data
 		} else if test.Fun == "IsTerm" {
 			op = n.IsTerm()
 		} else if test.Fun == "IsRoot" {
 			op = n.IsRoot()
-		} else if test.Fun == "MakeTerm" {
-			n.MakeTerm()
+		} else if test.Fun == "SetTerm" {
+			n.SetTerm(true)
 			op = n.isTerm
 		}
 
 		if !cmp.Equal(test.Out, op) {
-			t.Fatalf("expected and actual do not match: %s", cmp.Diff(test.Out, op))
+			t.Fatalf("%s: expected and actual do not match: %s", test.Name, cmp.Diff(test.Out, op))
 		}
 	}
 }
 
-func TestNodeAddChild(t *testing.T) {
+func TestNodeAddRemoveChild(t *testing.T) {
 	var cases = []struct {
 		Name         string
+		NoChildMap   bool
 		ExistingRune bool
+		RemoveChild  bool
 		Result       string
 	}{
 		{
@@ -124,9 +124,18 @@ func TestNodeAddChild(t *testing.T) {
 			Result: nodeAdded,
 		},
 		{
+			Name:       "new rune is added successfully when child map has not been initialized",
+			NoChildMap: true,
+			Result:     nodeAdded,
+		},
+		{
 			Name:         "existing rune is found successfully",
 			ExistingRune: true,
 			Result:       nodeFound,
+		},
+		{
+			Name:        "existing rune is removed succesfully",
+			RemoveChild: true,
 		},
 	}
 	for _, test := range cases {
@@ -137,6 +146,10 @@ func TestNodeAddChild(t *testing.T) {
 		}
 		cRune := 'b'
 		ipRune := cRune
+
+		if test.NoChildMap {
+			n.children = nil
+		}
 
 		if test.ExistingRune {
 			n = &node{
@@ -151,13 +164,28 @@ func TestNodeAddChild(t *testing.T) {
 			}
 		}
 
+		if test.RemoveChild {
+			n.children['c'] = &node{}
+			n.children['d'] = &node{}
+
+			exp := &node{
+				value:    'a',
+				children: make(childNodeMap),
+				isTerm:   true,
+			}
+			exp.children['d'] = &node{}
+
+			n.RemoveChild('c')
+			assert.Equal(t, exp, n)
+			return
+		}
 		nResult := n.AddChild(ipRune)
 
 		assert.Equal(t, test.Result, nResult.result)
 		if _, ok := n.children[cRune]; !ok {
 			t.Fatalf("child for %c does not exist", cRune)
 		}
-		if n.children[cRune].value != cRune {
+		if n.children[cRune].Value() != cRune {
 			t.Fatalf("child for %c does not have correct value", cRune)
 		}
 		if n.isTerm != false {
@@ -184,11 +212,6 @@ func TestNodeEqual(t *testing.T) {
 			Name:    "nil nodes are equal",
 			NilNode: "both",
 			IsEqual: true,
-		},
-		{
-			Name:    "nil and non-nil nodes are not equal",
-			NilNode: "one",
-			IsEqual: false,
 		},
 		{
 			Name:    "nil and non-nil nodes are not equal",
@@ -272,7 +295,8 @@ func TestNodeEqual(t *testing.T) {
 		if test.ParentDiff == "nil" {
 			tn2.parent = nil
 		} else if test.ParentDiff == "value" {
-			tn2.parent.value = 'x'
+			pNode := tn2.parent.(*node)
+			pNode.value = 'x'
 		}
 
 		if test.ChildDiff == "empty" {
@@ -290,7 +314,11 @@ func TestNodeEqual(t *testing.T) {
 		}
 		assert.Empty(t, err)
 
-		op := tn1.Equal(tn2)
+		var tn2Ip Node
+		if tn2 != nil {
+			tn2Ip = tn2
+		}
+		op := tn1.Equal(tn2Ip)
 		assert.Equal(t, test.IsEqual, op)
 	}
 }

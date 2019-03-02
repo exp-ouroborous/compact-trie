@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"sort"
-	"strconv"
 
 	"github.com/disiqueira/gotree"
 )
@@ -24,7 +23,7 @@ func (w *wordArray) add(word string) {
 
 // Trie defines a trie with an optional name
 type Trie struct {
-	Root *node
+	Root Node
 	Name string
 }
 
@@ -107,22 +106,6 @@ func (t *Trie) findAtNode(n Node, runes []rune, pos int) (Node, error) {
 	return t.findAtNode(cNode, runes, pos)
 }
 
-func findChildrenForRune(n *node, r rune) []*node {
-	resultNodes := make([]*node, 0)
-	if r == '_' {
-		for _, cn := range n.Children() {
-			resultNodes = append(resultNodes, cn)
-		}
-	} else {
-		cn, ok := n.Children()[r]
-		if ok {
-			resultNodes = append(resultNodes, cn)
-		}
-	}
-
-	return resultNodes
-}
-
 // Remove removes the word from the trie. An error is returned is the word is not in the trie
 func (t *Trie) Remove(word string) error {
 	termNode, err := t.Find(word)
@@ -133,7 +116,7 @@ func (t *Trie) Remove(word string) error {
 	termNode.SetTerm(false)
 
 	curNode := termNode
-	for !curNode.IsTerm() && !curNode.IsRoot() && len(curNode.Children()) > 0 {
+	for !curNode.IsTerm() && !curNode.IsRoot() && len(curNode.Children()) == 0 {
 		curNode.Parent().RemoveChild(curNode.Value())
 		curNode = curNode.Parent()
 	}
@@ -143,7 +126,7 @@ func (t *Trie) Remove(word string) error {
 
 // Add adds a word to the trie and returns the terminating node. If the word already
 // exists in the trie an error is returned
-func (t *Trie) Add(word string, data interface{}) (*node, error) {
+func (t *Trie) Add(word string, data interface{}) (Node, error) {
 	if len(word) == 0 {
 		return nil, fmt.Errorf("no string to add")
 	}
@@ -153,7 +136,7 @@ func (t *Trie) Add(word string, data interface{}) (*node, error) {
 }
 
 // addAtNode adds runes starting at node specified and returns the terminating node
-func (t *Trie) addAtNode(n *node, runes []rune, data interface{}) (*node, error) {
+func (t *Trie) addAtNode(n Node, runes []rune, data interface{}) (Node, error) {
 	r := runes[0]
 	nResult := n.AddChild(r)
 
@@ -163,24 +146,19 @@ func (t *Trie) addAtNode(n *node, runes []rune, data interface{}) (*node, error)
 	} else {
 		// This was the last character so we should check if this is a terminator
 		if nResult.result == nodeFound {
-			if nResult.node.IsTerm() {
+			if nResult.Node.IsTerm() {
 				return nil, fmt.Errorf("word already exists in trie")
 			}
-			nResult.node.SetTerm(false)
-			nResult.node.setData(data)
+			nResult.Node.SetTerm(false)
 		}
-		nResult.node.setData(data)
-		nResult.node.childCount++
-		n.childCount++
-		return nResult.node, nil
+		nResult.Node.SetData(data)
+		return nResult.Node, nil
 	}
 
-	cn, err := t.addAtNode(nResult.node, cRunes, data)
+	cn, err := t.addAtNode(nResult.Node, cRunes, data)
 	if err != nil {
 		return nil, err
 	}
-
-	n.childCount++
 	return cn, nil
 }
 
@@ -201,7 +179,7 @@ func (t *Trie) Equal(compareTo *Trie) bool {
 }
 
 // wordsAtNode returns all words that occur after the node specified
-func (t *Trie) wordsAtNode(n *node, tillThis string, words *wordArray) {
+func (t *Trie) wordsAtNode(n Node, tillThis string, words *wordArray) {
 	if n.IsTerm() {
 		words.add(tillThis)
 	}
@@ -212,20 +190,20 @@ func (t *Trie) wordsAtNode(n *node, tillThis string, words *wordArray) {
 }
 
 // Tree gives a goTree for the trie
-func (t *Trie) Tree(withCount bool) gotree.Tree {
+func (t *Trie) Tree() gotree.Tree {
 	tree := gotree.New(t.Name)
 
-	t.treeAtNode(t.Root, tree, withCount)
+	t.treeAtNode(t.Root, tree)
 
 	return tree
 }
 
 // treeAtNode gives the tree beginning from the node specified
-func (t *Trie) treeAtNode(n *node, tree gotree.Tree, withCount bool) {
+func (t *Trie) treeAtNode(n Node, tree gotree.Tree) {
 	// Sort child runes so that the trie viz is consistent
-	runes := make(runeSlice, len(n.children))
+	runes := make(runeSlice, len(n.Children()))
 	i := 0
-	for r := range n.children {
+	for r := range n.Children() {
 		runes[i] = r
 		i++
 	}
@@ -233,17 +211,14 @@ func (t *Trie) treeAtNode(n *node, tree gotree.Tree, withCount bool) {
 
 	for _, r := range runes {
 		label := string(r)
-		if withCount {
-			label += "(" + strconv.Itoa(n.children[r].childCount) + ")"
-		}
 		leaf := tree.Add(label)
-		t.treeAtNode(n.children[r], leaf, withCount)
+		t.treeAtNode(n.Children()[r], leaf)
 	}
 }
 
 // String returns the tree as a string
 func (t *Trie) String() string {
-	return t.Tree(false).Print()
+	return t.Tree().Print()
 }
 
 // Sadly you have to implement a sort interface for a rune :-(
