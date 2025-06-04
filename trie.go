@@ -7,7 +7,7 @@ import (
 	"os"
 	"sort"
 
-	"github.com/disiqueira/gotree"
+	"github.com/disiqueira/gotree/v3"
 )
 
 const trieName = "Trie"
