@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/disiqueira/gotree"
+	"github.com/disiqueira/gotree/v3"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
